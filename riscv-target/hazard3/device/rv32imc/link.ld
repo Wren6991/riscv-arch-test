@@ -1,24 +1,41 @@
-OUTPUT_ARCH( "riscv" )
+MEMORY
+  {
+    RAM   (wx) : ORIGIN = 0x0, LENGTH = 4M
+    RESULT (w) : ORIGIN = ORIGIN(RAM) + LENGTH(RAM), LENGTH = 64k
+  }
+
+OUTPUT_FORMAT("elf32-littleriscv", "elf32-littleriscv", "elf32-littleriscv")
+OUTPUT_ARCH(riscv)
 ENTRY(_start)
 
 SECTIONS
 {
-  . = 0x00000000;
-  .text.trap : { *(.text.trap) }
+  .text : {
+    . = ORIGIN(RAM) + 0x40;
+    PROVIDE (_start = .);
+    *(.text*)
+    . = ALIGN(4);
+  } > RAM
 
-  . = 0x00000080;
-  .text.init : { *(.text.init) }
+  .rodata : {
+    *(.rodata*)
+    . = ALIGN(4);
+  } > RAM
 
-  . = ALIGN(0x1000);
-  .tohost : { *(.tohost) }
-  
-  . = ALIGN(0x1000);
-  .text : { *(.text) }
-  
-  . = ALIGN(0x1000);
-  .data : { *(.data) }
-  .data.string : { *(.data.string)}
-  .bss : { *(.bss) }
-  _end = .;
+  .data : {
+    *(.data*)
+    . = ALIGN(4);
+  } > RAM
+  .bss : {
+    *(.bss .bss.*)
+    . = ALIGN(4);
+  } > RAM
+  /* Link testout section to upper memory region */
+  .testdata :
+  {
+    PROVIDE(__testdata_start = .);
+   *(.testdata)
+  } > RESULT
 }
+
 

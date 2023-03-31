@@ -4,8 +4,8 @@
 //
 // Description: Common header file for RV32I tests
 
-#ifndef _COMPLIANCE_TEST_H
-#define _COMPLIANCE_TEST_H
+#ifndef _HAZARD3_MODEL_TEST_H
+#define _HAZARD3_MODEL_TEST_H
 
 #include "riscv_test.h"
 
@@ -13,40 +13,46 @@
 // RV Compliance Macros
 //-----------------------------------------------------------------------
 
-#define TESTUTIL_BASE 0x20000
-#define TESTUTIL_ADDR_HALT (TESTUTIL_BASE + 0x0)
-#define TESTUTIL_ADDR_BEGIN_SIGNATURE (TESTUTIL_BASE + 0x4)
-#define TESTUTIL_ADDR_END_SIGNATURE (TESTUTIL_BASE + 0x8)
+// Hazard3 testbench IO defines
+#define IO_BASE 0x80000000
+#define IO_PRINT_CHAR  (IO_BASE + 0x000)
+#define IO_PRINT_U32   (IO_BASE + 0x004)
+#define IO_EXIT        (IO_BASE + 0x008)
+#define IO_SET_SOFTIRQ (IO_BASE + 0x010)
+#define IO_CLR_SOFTIRQ (IO_BASE + 0x014)
 
-#define RV_COMPLIANCE_HALT                                                    \
-        /* tell simulation about location of begin_signature */               \
-        la t0, begin_signature;                                               \
-        li t1, TESTUTIL_ADDR_BEGIN_SIGNATURE;                                 \
-        sw t0, 0(t1);                                                         \
-        /* tell simulation about location of end_signature */                 \
-        la t0, end_signature;                                                 \
-        li t1, TESTUTIL_ADDR_END_SIGNATURE;                                   \
-        sw t0, 0(t1);                                                         \
-        /* dump signature and terminate simulation */                         \
-        li t0, 1;                                                             \
-        li t1, TESTUTIL_ADDR_HALT;                                            \
-        sw t0, 0(t1);                                                         \
-        RVTEST_PASS                                                           \
+// Just kill the sim, software environment is unimportant now that the
+// signature has been written into memory. The tb will dump the signature
+// section for comparison.
+#define RVMODEL_HALT                                                   \
+        li a0, IO_EXIT                                               ; \
+        li a1, 0                                                     ; \
+        sw a1, (a0)                                                  ; \
 
-#define RV_COMPLIANCE_RV32M                                                   \
-        RVTEST_RV32M                                                          \
+#define RV_COMPLIANCE_RV32M                                            \
+        RVTEST_RV32M                                                   \
 
-#define RV_COMPLIANCE_CODE_BEGIN                                              \
-        RVTEST_CODE_BEGIN_OLD \
+#define RV_COMPLIANCE_CODE_BEGIN                                       \
+        RVTEST_CODE_BEGIN_OLD                                          \
 
-#define RV_COMPLIANCE_CODE_END                                                \
-        RVTEST_CODE_END_OLD \
+#define RV_COMPLIANCE_CODE_END                                         \
+        RVMODEL_HALT                                                   \
 
-#define RV_COMPLIANCE_DATA_BEGIN                                              \
-        RVTEST_DATA_BEGIN_OLD \
+#define RVMODEL_DATA_BEGIN                                             \
+        .section .testdata, "aw";                                      \
+        RVTEST_DATA_BEGIN_OLD                                          \
 
-#define RV_COMPLIANCE_DATA_END                                                \
-        RVTEST_DATA_END_OLD \
+#define RVMODEL_DATA_END                                               \
+        RVTEST_DATA_END_OLD                                            \
+
+// TODO defining these as empty macros to shut up the warning -- not clear how
+// they should be implemented as we need registers to to a store, and no
+// documentation of which registers we may use
+#define RVMODEL_SET_MSW_INT
+#define RVMODEL_CLEAR_MSW_INT
+#define RVMODEL_CLEAR_MTIMER_INT
+#define RVMODEL_CLEAR_MEXT_INT
+
 
 #endif
 // RISC-V Compliance IO Test Header File
@@ -74,14 +80,14 @@
 #define _COMPLIANCE_IO_H
 
 //-----------------------------------------------------------------------
-// RV IO Macros (Non functional)
+// RV IO Macros (Non-functional)
 //-----------------------------------------------------------------------
 
 #define RVTEST_IO_INIT
-#define RVTEST_IO_WRITE_STR(_SP, _STR)
-#define RVTEST_IO_CHECK()
-#define RVTEST_IO_ASSERT_GPR_EQ(_SP, _R, _I)
-#define RVTEST_IO_ASSERT_SFPR_EQ(_F, _R, _I)
-#define RVTEST_IO_ASSERT_DFPR_EQ(_D, _R, _I)
+#define RVMODEL_IO_WRITE_STR(_SP, _STR)
+#define RVMODEL_IO_CHECK()
+#define RVMODEL_IO_ASSERT_GPR_EQ(_SP, _R, _I)
+#define RVMODEL_IO_ASSERT_SFPR_EQ(_F, _R, _I)
+#define RVMODEL_IO_ASSERT_DFPR_EQ(_D, _R, _I)
 
 #endif // _COMPLIANCE_IO_H

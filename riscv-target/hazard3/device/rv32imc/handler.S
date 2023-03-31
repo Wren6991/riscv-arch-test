@@ -1,6 +1,12 @@
 .section .text.trap;
 .align  4;
 
+.global _reset_vector
+_reset_vector:
+    j _start
+
+.p2align 6
+.global _trap_start
 _trap_start:
     j _trap_exception
     j _int_exc
