@@ -54,9 +54,12 @@ rv32i_sc_tests = \
   csw-01 \
   cswsp-01 \
   cxor-01 \
-  cebreak-01
 
 
 rv32i_tests = $(addsuffix .elf, $(rv32i_sc_tests))
 
 target_tests += $(rv32i_tests)
+
+# Hazard3: disabled due to a bug in the test (assuming mtval is not hardwired):
+# cebreak-01
+# Note this instruction is covered to death by the debug compliance tests

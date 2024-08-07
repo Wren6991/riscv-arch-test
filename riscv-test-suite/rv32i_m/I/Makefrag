@@ -40,7 +40,6 @@ rv32i_sc_tests = \
   bltu-01 \
   bne-01 \
   jal-01 \
-  jalr-01 \
   lb-align-01 \
   lbu-align-01 \
   lh-align-01 \
@@ -72,3 +71,6 @@ rv32i_sc_tests = \
 rv32i_tests = $(addsuffix .elf, $(rv32i_sc_tests))
 
 target_tests += $(rv32i_tests)
+
+# Hazard3: Disabled due to a compatibility issue with GCC 14:
+# jalr-01
