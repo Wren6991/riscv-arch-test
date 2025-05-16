@@ -89,21 +89,7 @@ class spike_simple(pluginTemplate):
       # will be useful in setting integer value in the compiler string (if not already hardcoded);
       self.xlen = ('64' if 64 in ispec['supported_xlen'] else '32')
 
-      # for spike start building the '--isa' argument. the self.isa is dutnmae specific and may not be
-      # useful for all DUTs
-      self.isa = 'rv' + self.xlen
-      if "I" in ispec["ISA"]:
-          self.isa += 'i'
-      if "M" in ispec["ISA"]:
-          self.isa += 'm'
-      if "A" in ispec["ISA"]:
-          self.isa += 'a'
-      if "F" in ispec["ISA"]:
-          self.isa += 'f'
-      if "D" in ispec["ISA"]:
-          self.isa += 'd'
-      if "C" in ispec["ISA"]:
-          self.isa += 'c'
+      self.isa = "rv32imab_zbc_zbkb_zca_zcb_zclsd_zcmp_zilsd"
 
       #TODO: The following assumes you are using the riscv-gcc toolchain. If
       #      not please change appropriately
@@ -158,8 +144,8 @@ class spike_simple(pluginTemplate):
 	  # echo statement.
           if self.target_run:
             # set up the simulation command. Template is for spike. Please change.
-            simcmd = self.dut_exe + ' -m8796093022208 --isa={0} +signature={1} +signature-granularity=4 {2}'.format(self.isa, sig_file, elf)
-            simcmd = simcmd + ';' + self.dut_exe + ' -m8796093022208 --isa={0} --log-commits -l my.elf 2> {1}'.format(self.isa, log_file)
+            simcmd = self.dut_exe + ' --isa={0} +signature={1} +signature-granularity=4 {2}'.format(self.isa, sig_file, elf)
+            # simcmd = simcmd + ';' + self.dut_exe + ' --isa={0} --log-commits -l my.elf 2> {1}'.format(self.isa, log_file)
           else:
             simcmd = 'echo "NO RUN"'
 
