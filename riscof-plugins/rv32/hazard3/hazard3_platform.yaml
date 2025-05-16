@@ -1,0 +1,13 @@
+mtime:
+  implemented: true
+  address: 0x80000100
+mtimecmp:
+  implemented: true
+  address: 0x80000108
+# There is no NMI on Hazard3 but this piece of shit framework wants this to be
+# defined anyway:
+nmi:
+  label: nmi_vector
+# Likewise this is not actually used for anything:
+reset:
+  label: reset_vector
