@@ -37,7 +37,7 @@ class hazard3(pluginTemplate):
         # Path to the directory where this python file is located. Collect it from the config.ini
         self.pluginpath=os.path.abspath(config['pluginpath'])
 
-        self.dut_exe = os.path.join(self.pluginpath, "../../../../../tb_cxxrtl/tb")
+        self.dut_exe = os.path.join(self.pluginpath, "../../../../../tb_cxxrtl/tb-pmpfull")
 
         # Collect the paths to the  riscv-config absed ISA and platform yaml files. One can choose
         # to hardcode these here itself instead of picking it from the config.ini file.
