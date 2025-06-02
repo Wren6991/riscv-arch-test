@@ -122,7 +122,11 @@ class hazard3(pluginTemplate):
           cmd = compile_cmd.format(testentry['isa'].lower(), self.xlen, test, shortname, compile_macros)
 
           if self.target_run:
-            simcmd = self.dut_exe + f' --bin {shortname}.bin --dump 0x400000 0x401000 --logfile {shortname}.sig'
+            simcmd = self.dut_exe + f' --bin {shortname}.bin --dump' \
+              + f' 0x`riscv32-unknown-elf-objdump -t {shortname}.elf | grep rvtest_sig_begin | head -c8`' \
+              + f' 0x`riscv32-unknown-elf-objdump -t {shortname}.elf | grep rvtest_sig_end | head -c8`' \
+              + f' --logfile {shortname}.log' \
+              + f' --sigfile DUT-hazard3.signature'
           else:
             simcmd = 'echo "NO RUN"'
 

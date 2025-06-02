@@ -30,6 +30,7 @@ SECTIONS
   .test_signature : {
     PROVIDE(__testdata_start = .);
     *(.test_signature .test_signature.*)
+    PROVIDE(__testdata_end = .);
   } > RESULT
 
 }
