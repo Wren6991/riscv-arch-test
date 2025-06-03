@@ -127,13 +127,14 @@ class hazard3(pluginTemplate):
               + f' 0x`riscv32-unknown-elf-objdump -t {shortname}.elf | grep rvtest_sig_end | head -c8`' \
               + f' --logfile {shortname}.log' \
               + f' --sigfile DUT-hazard3.signature'
+            simcmd += f' --vcd {shortname}.vcd'
           else:
             simcmd = 'echo "NO RUN"'
 
           execute = f'@echo "Running: {shortname}"\n' + " &&  \\\n".join((
             f"@cd {testentry['work_dir']}",
             cmd,
-            f"riscv32-unknown-elf-objdump -hd {shortname}.elf > {shortname}.dis",
+            f"riscv32-unknown-elf-objdump -hSd {shortname}.elf > {shortname}.dis",
             f"riscv32-unknown-elf-objcopy -O binary {shortname}.elf {shortname}.bin",
             simcmd
           )) + f'\n@echo "Finished running: {shortname}"'
