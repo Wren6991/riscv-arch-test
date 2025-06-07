@@ -76,7 +76,7 @@ class spike_simple(pluginTemplate):
       self.xlen = ('64' if 64 in ispec['supported_xlen'] else '32')
 
       # Hardcoded (maximal) value for Hazard3
-      self.isa = "rv32imab_zbc_zbkb_zca_zcb_zclsd_zcmp_zilsd"
+      self.isa = "rv32imab_zbc_zbkb_zbkx_zca_zcb_zclsd_zcmp_zilsd"
 
     def runTests(self, testList):
 
