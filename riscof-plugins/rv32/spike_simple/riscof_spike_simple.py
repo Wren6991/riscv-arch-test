@@ -10,7 +10,6 @@ from string import Template
 import sys
 
 import riscof.utils as utils
-import riscof.constants as constants
 from riscof.pluginTemplate import pluginTemplate
 
 logger = logging.getLogger()
@@ -39,7 +38,7 @@ class spike_simple(pluginTemplate):
         # Path to the directory where this python file is located. Collect it from the config.ini
         self.pluginpath=os.path.abspath(config['pluginpath'])
 
-        # Collect the paths to the  riscv-config absed ISA and platform yaml files. One can choose
+        # Collect the paths to the  riscv-config based ISA and platform yaml files. One can choose
         # to hardcode these here itself instead of picking it from the config.ini file.
         self.isa_spec = os.path.abspath(config['ispec'])
         self.platform_spec = os.path.abspath(config['pspec'])
@@ -78,6 +77,13 @@ class spike_simple(pluginTemplate):
       # Hardcoded (maximal) value for Hazard3
       self.isa = "rv32imab_zbc_zbkb_zbkx_zca_zcb_zclsd_zcmp_zilsd"
 
+      if 'pmp-grain' in ispec['PMP']:
+          # if the PMP granularity is specified in the isa yaml, then we use that value
+          # convert from G to bytes: g = 2^(G+2) bytes
+          self.granularity = pow(2, ispec['PMP']['pmp-grain']+2)
+      else:
+        self.granularity = 4  # default granularity is 4 bytes 
+
     def runTests(self, testList):
 
       # Delete Makefile if it already exists.
@@ -90,7 +96,7 @@ class spike_simple(pluginTemplate):
       # function earlier
       make.makeCommand = 'make -k -j' + self.num_jobs
 
-      # we will iterate over each entry in the testList. Each entry node will be refered to by the
+      # we will iterate over each entry in the testList. Each entry node will be referred to by the
       # variable testname.
       for testname in testList:
 
@@ -142,7 +148,11 @@ class spike_simple(pluginTemplate):
 
       # once the make-targets are done and the makefile has been created, run all the targets in
       # parallel using the make command set above.
-      make.execute_all(self.work_dir)
+      #make.execute_all(self.work_dir)
+      # DH 7/26/22 increase timeout to 1800 seconds so sim will finish on slow machines
+      # DH 5/17/23 increase timeout to 3600 seconds
+      make.execute_all(self.work_dir, timeout = 3600) 
+
 
       # if target runs are not required then we simply exit as this point after running all
       # the makefile targets.
