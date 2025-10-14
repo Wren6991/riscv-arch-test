@@ -24,6 +24,10 @@ sw a1, 8(a0)              ;\
 .pushsection .text.init         ;\
   j __default_trap_handler      ;\
 .p2align 6                      ;\
+.option push                    ;\
+.option arch, +zicsr            ;\
+  csrw mstatus, zero            ;\
+.option pop                     ;\
   j _start                      ;\
 .global __default_trap_handler  ;\
 __default_trap_handler:         ;\
