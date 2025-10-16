@@ -126,8 +126,9 @@ class hazard3(pluginTemplate):
               + f' 0x`riscv32-unknown-elf-objdump -t {shortname}.elf | grep rvtest_sig_begin | head -c8`' \
               + f' 0x`riscv32-unknown-elf-objdump -t {shortname}.elf | grep rvtest_sig_end | head -c8`' \
               + f' --logfile {shortname}.log' \
-              + f' --sigfile DUT-hazard3.signature'
-            simcmd += f' --vcd {shortname}.vcd'
+              + f' --sigfile DUT-hazard3.signature' \
+              + f' --cycles 500000'
+            # simcmd += f' --vcd {shortname}.vcd'
           else:
             simcmd = 'echo "NO RUN"'
 

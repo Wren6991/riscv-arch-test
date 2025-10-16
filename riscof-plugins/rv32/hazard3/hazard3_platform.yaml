@@ -1,9 +1,9 @@
 mtime:
   implemented: true
-  address: 0x80000100
+  address: 0xc0000100
 mtimecmp:
   implemented: true
-  address: 0x80000108
+  address: 0xc0000108
 # There is no NMI on Hazard3 but this piece of shit framework wants this to be
 # defined anyway:
 nmi:

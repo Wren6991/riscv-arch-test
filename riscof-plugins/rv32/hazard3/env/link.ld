@@ -1,6 +1,6 @@
 MEMORY
   {
-    RAM   (wx) : ORIGIN = 0x00000000, LENGTH = 4M
+    RAM   (wx) : ORIGIN = 0x80000000, LENGTH = 4M
     RESULT (w) : ORIGIN = ORIGIN(RAM) + LENGTH(RAM), LENGTH = 256k
   }
 
@@ -12,6 +12,7 @@ SECTIONS
 {
   .text : {
     KEEP(*(.text.init .text.init.*))
+    . = ALIGN(0x1000);
     *(.text*)
   } > RAM
 

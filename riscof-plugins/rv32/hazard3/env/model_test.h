@@ -14,7 +14,7 @@
 
 #define RVMODEL_HALT      ;\
 __test_exit:              ;\
-lui a0, 0x80000000 >> 12  ;\
+lui a0, 0xc0000000 >> 12  ;\
 li a1, 0                  ;\
 sw a1, 8(a0)              ;\
 1:                        ;\
@@ -31,7 +31,7 @@ sw a1, 8(a0)              ;\
   j _start                      ;\
 .global __default_trap_handler  ;\
 __default_trap_handler:         ;\
-lui a0, 0x80000000 >> 12        ;\
+lui a0, 0xc0000000 >> 12        ;\
 li a1, -1                       ;\
 sw a1, 8(a0)                    ;\
 1:                              ;\
