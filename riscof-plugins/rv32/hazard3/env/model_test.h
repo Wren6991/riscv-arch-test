@@ -37,6 +37,7 @@ sw a1, 8(a0)                    ;\
 1:                              ;\
   j 1b                          ;\
 .popsection                     ;\
+.p2align 12                     ;\
 .global _start                  ;\
 _start:                         ;\
 

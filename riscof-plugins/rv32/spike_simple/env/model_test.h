@@ -32,7 +32,10 @@ li x1, 1                ;\
     sw x1, tohost, t2   ;\
     j 1b                ;\
 
-#define RVMODEL_BOOT
+#define RVMODEL_BOOT   \
+    j 1f             ; \
+    .p2align 12      ; \
+    1:               ; \
 
 //RV_COMPLIANCE_DATA_BEGIN
 #define RVMODEL_DATA_BEGIN                                              \
