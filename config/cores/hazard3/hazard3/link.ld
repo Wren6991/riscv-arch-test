@@ -24,7 +24,7 @@ SECTIONS
 {
   ASSERT(TEST_BASE >= ORIGIN(ram) && TEST_BASE < ORIGIN(ram) + LENGTH(ram), "TEST_BASE is outside RAM; update TEST_BASE and RAM_ORIGIN/RAM_LENGTH in link.ld, and the matching memory.regions entry in sail.json")
 
-  /* Hazard3 boots from RESET_VECTOR (0x80000040) but the testbench loads the
+  /* Hazard3 tb boots from RESET_VECTOR (0x80000040) but the testbench loads the
      flat binary at RAM_ORIGIN (0x80000000). .text.boot (emitted by
      RVMODEL_BOOT) fills the 0x40-byte gap so the entry point lands at the
      reset vector. */
