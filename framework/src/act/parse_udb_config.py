@@ -9,10 +9,6 @@
 
 from __future__ import annotations
 
-import importlib.resources
-import os
-import shutil
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -24,95 +20,48 @@ from ruamel.yaml import YAML
 from act.build import build
 from act.build_types import BuildTask, PythonAction
 from act.dut_macros import generate_rvmodel_svh
+from act.udb_resolver import (
+    UdbError,
+    find_spec_dir,
+    generate_config_header,
+    load_extension_defs,
+    resolve_extension_closure,
+    validate_config,
+)
 
 if TYPE_CHECKING:
     from act.config import Config
 
 
-def _find_gemfile() -> Path:
-    """Locate the Gemfile bundled with the act package."""
-    gemfile_path = Path(str(importlib.resources.files("act"))) / "data" / "Gemfile"
-    if not gemfile_path.exists():
-        raise RuntimeError(
-            "No Gemfile found in act package data. Install the udb gem with 'gem install udb' or reinstall act."
-        )
-    return gemfile_path
+#: Extension definitions loaded once and shared across all configs in a run.
+_ext_defs: dict[str, dict] | None = None
 
 
-def _bundle_env() -> dict[str, str]:
-    """Return an environment dict that forces bundler to use the act Gemfile."""
-    env = os.environ.copy()
-    env["BUNDLE_GEMFILE"] = str(_find_gemfile())
-    return env
+def _get_ext_defs() -> dict[str, dict]:
+    global _ext_defs
+    if _ext_defs is None:
+        _ext_defs = load_extension_defs(find_spec_dir())
+    return _ext_defs
 
 
-def _bundle_exec(cmd: list[str], *, check: bool = False, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
-    """Run `bundle exec <cmd>` with the act-bundled Gemfile."""
-    return subprocess.run(["bundle", "exec", *cmd], env=_bundle_env(), check=check, **kwargs)  # type: ignore[arg-type]
-
-
-def _ensure_udb_installed() -> None:
-    """Ensure the correct version of the UDB gem is installed via bundler.
-
-    Uses `bundle check` to verify that installed gems match Gemfile.lock.
-    If gems are missing or out of date, runs `bundle install` to fix them.
-    """
-    gemfile = _find_gemfile()
-    env = _bundle_env()
-
-    # Check if all gems (including udb) are installed at the correct versions
-    try:
-        subprocess.run(["bundle", "check"], check=True, cwd=gemfile.parent, capture_output=True, text=True, env=env)
-        return  # All gems satisfied — correct version is installed
-    except FileNotFoundError as e:
-        raise RuntimeError(
-            "udb command not found and 'bundle' is not available. See the README for installation instructions."
-        ) from e
-    except subprocess.CalledProcessError:
-        pass  # Gems missing or wrong version — need to install (done below)
-
-    print("UDB gem missing or out of date; running 'bundle install'...")
-    max_attempts = 3
-    for attempt in range(1, max_attempts + 1):
-        try:
-            subprocess.run(["bundle", "install"], check=True, cwd=gemfile.parent, env=env)
-            break
-        except subprocess.CalledProcessError as e:
-            if attempt == max_attempts:
-                raise RuntimeError("'bundle install' failed. Check Ruby and bundler installation.") from e
-            backoff = attempt * 10
-            print(f"'bundle install' attempt {attempt} failed. Retrying in {backoff}s...")
-            time.sleep(backoff)
-
-    if shutil.which("bundle") is None:
-        raise RuntimeError("'bundle' command still not found after install.")
+def _load_config_yaml(udb_config_file: Path) -> dict:
+    yaml = YAML(typ="safe", pure=True)
+    return yaml.load(udb_config_file.read_text())
 
 
 def validate_udb_config(udb_config_file: Path, marker: Path) -> None:
-    """Run `udb validate cfg` and touch a sentinel marker on success.
+    """Validate the UDB config and touch a sentinel marker on success.
 
     The marker is the BuildTask's primary output — its mtime drives the
     DAG's staleness check, so the validate runs once whenever the UDB
-    config has changed and is then reused as a dep by every UDB-gen task
-    for that config.
-
-    On failure, raise so the build system reports the error through its
-    normal post-build failure path. This runs as a PythonAction inside
-    build()'s DAG executor, which owns the terminal via a transient rich
-    progress widget; writing to stdout/stderr (or sys.exit) here would
-    corrupt that widget and scramble the output.
+    config has changed and is then reused as a dep by every UDB-derived
+    task for that config.
     """
     try:
-        _bundle_exec(["udb", "validate", "cfg", str(udb_config_file)], check=True, capture_output=True)
-    except subprocess.CalledProcessError as e:
-        # udb writes its info log to stderr *before* the validation result
-        # on stdout; keep that order so the message reads as it does when
-        # udb is run directly.
-        stderr = e.stderr.decode(errors="replace") if e.stderr else ""
-        stdout = e.stdout.decode(errors="replace") if e.stdout else ""
-        details = f"{stderr}{stdout}".strip()
-        message = f"UDB configuration validation failed for {udb_config_file.name}"
-        raise RuntimeError(f"{message}\n{details}" if details else message) from e
+        config = _load_config_yaml(udb_config_file)
+        validate_config(config, _get_ext_defs())
+    except (UdbError, OSError, ValueError) as e:
+        raise RuntimeError(f"UDB configuration validation failed for {udb_config_file.name}\n{e}") from e
     marker.touch()
 
 
@@ -129,13 +78,13 @@ def prepare_dut_outputs(configs: list[Config], workdir: Path, jobs: int, verbose
 
     Staleness, parallel scheduling, the transient progress widget and the
     failure-skips-dependents behaviour are all handled by `build()`.
-    `bundle install` is run once up front because it isn't safe to run
-    concurrently.
     """
     if not configs:
         return
 
-    _ensure_udb_installed()
+    # Ensure the UDB spec directory can be found up front so a misconfigured
+    # environment fails fast rather than once per config.
+    _get_ext_defs()
 
     tasks: list[BuildTask] = []
     for cfg in configs:
@@ -194,24 +143,15 @@ def prepare_dut_outputs(configs: list[Config], workdir: Path, jobs: int, verbose
 
 
 def get_config_params(udb_config_file: Path) -> dict[str, int | bool | str | list[int | str | bool]]:
-    yaml = YAML(typ="safe", pure=True)
-    udb_config = yaml.load(udb_config_file.read_text())
-    config_params = udb_config["params"]
-    return config_params
+    udb_config = _load_config_yaml(udb_config_file)
+    return udb_config["params"]
 
 
 def generate_extension_list(udb_config_file: Path, output_dir: Path) -> None:
     extension_list_file = output_dir / "extensions.txt"
-    generate_cmd = [
-        "udb",
-        "list",
-        "extensions",
-        "--config",
-        str(udb_config_file),
-        "--output",
-        str(extension_list_file),
-    ]
-    _bundle_exec(generate_cmd, check=True, capture_output=True)
+    config = _load_config_yaml(udb_config_file)
+    closure = resolve_extension_closure(config, _get_ext_defs())
+    extension_list_file.write_text("\n".join(sorted(closure)) + "\n")
 
 
 def get_implemented_extensions(extension_list_file: Path) -> set[str]:
@@ -219,23 +159,10 @@ def get_implemented_extensions(extension_list_file: Path) -> set[str]:
 
 
 def _generate_one_dut_header(udb_config_file: Path, output_file: Path, subcommand: str) -> None:
-    """Run `udb-gen <subcommand>` for the given config and write the result to output_file.
-
-    On failure, raise with the udb-gen output as the message so the build
-    system reports it through its normal post-build failure path. Like
-    validate_udb_config, this runs as a PythonAction while build()'s
-    transient progress widget owns the terminal, so writing to
-    stdout/stderr here would scramble the output.
-    """
-    cmd = ["udb-gen", subcommand, "-c", str(udb_config_file), "-o", str(output_file)]
-    try:
-        _bundle_exec(cmd, check=True, capture_output=True)
-    except subprocess.CalledProcessError as e:
-        stderr = e.stderr.decode(errors="replace") if e.stderr else ""
-        stdout = e.stdout.decode(errors="replace") if e.stdout else ""
-        details = f"{stderr}{stdout}".strip()
-        message = f"Failed to generate {output_file.name} for {udb_config_file.stem}"
-        raise RuntimeError(f"{message}\n{details}" if details else message) from e
+    """Generate a DUT config header (C or SystemVerilog) from the UDB config."""
+    config = _load_config_yaml(udb_config_file)
+    svh = subcommand == "cfg-svh-header"
+    output_file.write_text(generate_config_header(config, _get_ext_defs(), svh=svh))
 
 
 # TODO: Generate Sail config file from UDB

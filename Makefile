@@ -104,14 +104,6 @@ else
   $(error Neither uv nor mise found, and no venv is activated. See the README (Prerequisites) for install options.)
 endif
 
-# Ruby/Bundler is required for the UDB gem whenever we are not going through mise.
-ifeq ($(MISE),)
-  BUNDLE := $(shell command -v bundle 2> /dev/null)
-  ifeq ($(BUNDLE),)
-    $(error Bundle not found. Ruby and Bundler are required for UDB. See the README for more information.)
-  endif
-endif
-
 
 
 ########## Help ##########
