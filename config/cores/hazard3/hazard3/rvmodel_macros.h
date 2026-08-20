@@ -1,10 +1,24 @@
 #ifndef _RVMODEL_MACROS_H
 #define _RVMODEL_MACROS_H
 
-#define IO_BASE 0xc0000000
-#define IO_PRINT_CHAR (IO_BASE + 0x0)
-#define IO_PRINT_U32  (IO_BASE + 0x4)
-#define IO_EXIT       (IO_BASE + 0x8)
+#define IO_BASE         0xc0000000
+
+#define IO_PRINT_CHAR  (IO_BASE + 0x000)
+#define IO_PRINT_U32   (IO_BASE + 0x004)
+#define IO_EXIT        (IO_BASE + 0x008)
+#define IO_SET_SOFTIRQ (IO_BASE + 0x010)
+#define IO_CLR_SOFTIRQ (IO_BASE + 0x014)
+#define IO_GLOBMON_EN  (IO_BASE + 0x018)
+#define IO_POISON_ADDR (IO_BASE + 0x01c)
+#define IO_SET_IRQ     (IO_BASE + 0x020)
+#define IO_CLR_IRQ     (IO_BASE + 0x030)
+
+#define IO_MTIME       (IO_BASE + 0x100)
+#define IO_MTIMEH      (IO_BASE + 0x104)
+#define IO_MTIMECMP0   (IO_BASE + 0x108)
+#define IO_MTIMECMP0H  (IO_BASE + 0x10c)
+#define IO_MTIMECMP1   (IO_BASE + 0x110)
+#define IO_MTIMECMP1H  (IO_BASE + 0x114)
 
 // Hazard3 has a conforming M-mode with trap handling.
 #define STANDARD_SM_SUPPORTED
@@ -42,9 +56,12 @@
 
 ##### IO #####
 
-// Nothing to do: tb IO is stateless.
-#define RVMODEL_IO_INIT(_R1, _R2, _R3)
-
+// Not really IO init but this is a convenient hook: enable the global monitor
+// so the LRSC tests get the expected reservation set size.
+#define RVMODEL_IO_INIT(_R1, _R2, _R3) \
+  li a0, IO_GLOBMON_EN  ;\
+  li a1, 1              ;\
+  sw a1, (a0)           ;
 
 #define RVMODEL_IO_WRITE_STR(_R1, _R2, _R3, _STR_PTR) \
   li _R1, IO_PRINT_CHAR      ;\
