@@ -1,61 +1,60 @@
 #ifndef _RVMODEL_MACROS_H
 #define _RVMODEL_MACROS_H
 
-// Hazard3 testbench (tb_cxxrtl) memory-mapped IO, from tb_constants.h:
-//   IO_BASE  = 0xc0000000
-//   IO_EXIT  = IO_BASE + 0x008  (write triggers sim exit; value is exit code)
-//   IO_PRINT_CHAR = IO_BASE + 0x000
-//   IO_MTIME     = IO_BASE + 0x100
-//   IO_MTIMECMP0 = IO_BASE + 0x108
-//
-// The signature is captured from memory by the testbench, so the macros below
-// are deliberately minimal stubs.
+#define IO_BASE 0xc0000000
+#define IO_PRINT_CHAR (IO_BASE + 0x0)
+#define IO_PRINT_U32  (IO_BASE + 0x4)
+#define IO_EXIT       (IO_BASE + 0x8)
 
-// Hazard3 has a standard (conforming) M-mode with normal trap handling.
+// Hazard3 has a conforming M-mode with trap handling.
 #define STANDARD_SM_SUPPORTED
 
 #define RVMODEL_DATA_SECTION
 
-##### STARTUP #####
-
-// Hazard3 resets to RESET_VECTOR = 0x80000040 (rvtest_entry_point), but its
-// reset mtvec is 0x80000000 (MTVEC_INIT). Emit a 64-byte stub at 0x80000000
-// so the flat binary loaded at RAM_ORIGIN has the entry point at offset 0x40,
-// and a stray trap before the test installs mtvec reports a failure instead
-// of executing garbage.
+// Empty default vector table: reset vector is straight after.
 #define RVMODEL_BOOT \
   .pushsection .text.boot, "ax"   ;\
   .p2align 6                      ;\
-  lui a0, 0xc0000                 ;\
+  /* shouldn't be here */         ;\
+  li a0, IO_EXIT                  ;\
   li a1, -1                       ;\
-  sw a1, 8(a0)                    ;\
+  sw a1, (a0)                     ;\
 1:                                ;\
   j 1b                            ;\
   .p2align 6                      ;\
   .popsection                     ;
 
-##### TERMINATION #####
-
-// Write 0 (pass) / 1 (fail) to IO_EXIT and spin. The testbench detects the
-// write and terminates simulation.
+// Writing to IO_EXIT terminates the simulation and, if the --cpuret flag was
+// passed to the tb invocation, also propagates the return code.
 #define RVMODEL_HALT_PASS                 \
-  lui x1, 0xc0000                         ;\
-  sw zero, 8(x1)                          ;\
+  li a0, IO_EXIT                          ;\
+  li a1, 0                                ;\
+  sw a1, (a0)                             ;\
 1:                                        ;\
   j 1b                                    ;
 
 #define RVMODEL_HALT_FAIL                 \
-  lui x1, 0xc0000                         ;\
-  li x2, 1                                ;\
-  sw x2, 8(x1)                            ;\
+  li a0, IO_EXIT                          ;\
+  li a1, 1                                ;\
+  sw a1, (a0)                             ;\
 1:                                        ;\
   j 1b                                    ;
 
 ##### IO #####
 
+// Nothing to do: tb IO is stateless.
 #define RVMODEL_IO_INIT(_R1, _R2, _R3)
 
-#define RVMODEL_IO_WRITE_STR(_R1, _R2, _R3, _STR_PTR)
+
+#define RVMODEL_IO_WRITE_STR(_R1, _R2, _R3, _STR_PTR) \
+  li _R1, IO_PRINT_CHAR      ;\
+  j 2f                       ;\
+1:                           ;\
+  sb _R2, (_R1)              ;\
+  addi _STR_PTR, _STR_PTR, 1 ;\
+2:                           ;\
+  lbu _R2, (_STR_PTR)        ;\
+  bnez _R2, 1b               ;
 
 ##### Access Fault #####
 
@@ -63,7 +62,7 @@
 
 ##### Interrupt Latency #####
 
-#define RVMODEL_INTERRUPT_LATENCY 10
+#define RVMODEL_INTERRUPT_LATENCY 3
 
 #define RVMODEL_TIMER_INT_SOON_DELAY 100
 
