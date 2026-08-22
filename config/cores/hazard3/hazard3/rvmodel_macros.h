@@ -20,6 +20,13 @@
 #define IO_MTIMECMP1   (IO_BASE + 0x110)
 #define IO_MTIMECMP1H  (IO_BASE + 0x114)
 
+#define hazard3_csr_meiea      0xbe0 // External interrupt pending array
+#define hazard3_csr_meipa      0xbe1 // External interrupt enable array
+#define hazard3_csr_meifa      0xbe2 // External interrupt force array
+#define hazard3_csr_meipra     0xbe3 // External interrupt priority array
+#define hazard3_csr_meinext    0xbe4 // Next external interrupt
+#define hazard3_csr_meicontext 0xbe5 // External interrupt context register
+
 // Hazard3 has a conforming M-mode with trap handling.
 #define STANDARD_SM_SUPPORTED
 
@@ -57,11 +64,12 @@
 ##### IO #####
 
 // Not really IO init but this is a convenient hook: enable the global monitor
-// so the LRSC tests get the expected reservation set size.
+// so the LRSC tests get the expected reservation set size. Also set up IRQ
+// controller to propagate external IRQs to mip.meip.
 #define RVMODEL_IO_INIT(_R1, _R2, _R3) \
-  li a0, IO_GLOBMON_EN  ;\
-  li a1, 1              ;\
-  sw a1, (a0)           ;
+  li _R1, IO_GLOBMON_EN       ;\
+  li _R2, 1                   ;\
+  sw _R2, (_R1)               ;
 
 #define RVMODEL_IO_WRITE_STR(_R1, _R2, _R3, _STR_PTR) \
   li _R1, IO_PRINT_CHAR      ;\
@@ -90,13 +98,30 @@
 
 ##### Machine Interrupts #####
 
-#define RVMODEL_SET_MSW_INT(_R1, _R2)
-#define RVMODEL_CLR_MSW_INT(_R1, _R2)
-#define RVMODEL_SET_MEXT_INT(_R1, _R2)
-#define RVMODEL_CLR_MEXT_INT(_R1, _R2)
+#define RVMODEL_SET_MSW_INT(_R1, _R2) \
+  li _R1, IO_SET_SOFTIRQ  ;\
+  li _R2, 1               ;\
+  sw _R2, (_R1)           ;
+
+
+#define RVMODEL_CLR_MSW_INT(_R1, _R2) \
+  li _R1, IO_CLR_SOFTIRQ  ;\
+  li _R2, 1               ;\
+  sw _R2, (_R1)           ;
+
+#define RVMODEL_SET_MEXT_INT(_R1, _R2) \
+  li _R1, IO_SET_IRQ      ;\
+  li _R2, 1               ;\
+  sw _R2, (_R1)           ;
+
+#define RVMODEL_CLR_MEXT_INT(_R1, _R2) \
+  li _R1, IO_CLR_IRQ      ;\
+  li _R2, 1               ;\
+  sw _R2, (_R1)           ;
 
 ##### Supervisor Interrupts #####
 
+// TODO: will have to implement these if/when Hazard3 gets S-mode. Empty for now:
 #define RVMODEL_SET_SEXT_INT(_R1, _R2)
 #define RVMODEL_CLR_SEXT_INT(_R1, _R2)
 #define RVMODEL_SET_SSW_INT(_R1, _R2)
