@@ -1,0 +1,1 @@
+sh -c 'riscv32-unknown-elf-objcopy -O binary "$0" "$0.bin" && ../../tb_verilator/tb-min --bin "$0.bin" --vcd "$0.vcd" --cpuret --cycles 5000000'

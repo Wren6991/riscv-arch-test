@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/riscv/riscv-unified-db/main/spec/schemas/config_schema.json
+---
+$schema: config_schema.json#
+kind: architecture configuration
+type: fully configured
+name: hazard3-min
+description: Hazard3 minimum configuration (RV32I only). No M/A/C/B extensions, no Zicsr/Zifencei/Zicntr, no traps, no privilege modes, no PMP.
+implemented_extensions:
+  - { name: I, version: "= 2.1" }
+
+params:
+  # Base & ISA mutability
+  MXLEN: 32
+  PHYS_ADDR_WIDTH: 32
+  M_MODE_ENDIANNESS: little
+  MISALIGNED_LDST: false
+  MISALIGNED_LDST_EXCEPTION_PRIORITY: high
+  PRECISE_SYNCHRONOUS_EXCEPTIONS: false
+  TRAP_ON_ECALL_FROM_M: false
+  TRAP_ON_EBREAK: false
+  TRAP_ON_RESERVED_INSTRUCTION: false
+  TRAP_ON_UNIMPLEMENTED_INSTRUCTION: false
+  TRAP_ON_UNIMPLEMENTED_CSR: false
+  MISA_CSR_IMPLEMENTED: false
+  MARCHID_IMPLEMENTED: false
+  MIMPID_IMPLEMENTED: false
+  NUM_PMP_ENTRIES: 0
+  NUM_USABLE_PMP_ENTRIES: 0
+  PMP_GRANULARITY: 0
+  PMA_GRANULARITY: 0
