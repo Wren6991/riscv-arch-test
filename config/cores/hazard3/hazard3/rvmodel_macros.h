@@ -27,8 +27,12 @@
 #define hazard3_csr_meinext    0xbe4 // Next external interrupt
 #define hazard3_csr_meicontext 0xbe5 // External interrupt context register
 
-// Hazard3 has a conforming M-mode with trap handling.
+// Enable in-test trap handlers via STANDARD_SM_SUPPORTED iff the UDB defines
+// SM_SUPPORTED. The latter is defined by the UDB-generated rvtest_config.h,
+// included before this header, when Sm is declared in the UDB .yaml.
+#ifdef SM_SUPPORTED
 #define STANDARD_SM_SUPPORTED
+#endif
 
 #define RVMODEL_DATA_SECTION
 
