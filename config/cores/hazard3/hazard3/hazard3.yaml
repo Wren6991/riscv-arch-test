@@ -15,12 +15,15 @@ implemented_extensions:
   - { name: Zicsr, version: "= 2.0" }
   - { name: Zifencei, version: "= 2.0.0" }
   - { name: Zicntr, version: "= 2.0" }
+  - { name: Zihintntl, version: "= 1.0.0" }
+  - { name: Zihintpause, version: "= 2.0.0" }
   - { name: Zca, version: "= 1.0.0" }
   - { name: Zcb, version: "= 1.0.0" }
   - { name: Zba, version: "= 1.0.0" }
   - { name: Zbb, version: "= 1.0.0" }
   - { name: Zbs, version: "= 1.0.0" }
   - { name: Zbc, version: "= 1.0.0" }
+  - { name: Zbkc, version: "= 1.0.0" }
   - { name: Zbkb, version: "= 1.0.0" }
   - { name: Zbkx, version: "= 1.0.0" }
   - { name: Zcmp, version: "= 1.0.0" }
