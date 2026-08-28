@@ -3,7 +3,7 @@
 $schema: config_schema.json#
 kind: architecture configuration
 type: fully configured
-name: hazard3
+name: hazard3-full
 description: Hazard3 RV32IMACB_Zbkb_Zbkx_Zcb_Zcmp_Zclsd_Zilsd core with U mode, 16-entry PMP (grain 0), and no S/F/D/V.
 implemented_extensions:
   - { name: I, version: "= 2.1" }

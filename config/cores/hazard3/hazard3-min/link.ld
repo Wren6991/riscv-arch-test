@@ -1,1 +1,1 @@
-../hazard3/link.ld
+../hazard3-full/link.ld
